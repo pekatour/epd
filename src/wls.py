@@ -20,15 +20,17 @@ def gradient(n,m):
     nb_pixels = n * m
     eye = [1] * nb_pixels
     n_eye = [-1] * nb_pixels
-    Dx = sparse.diags_array((n_eye, eye), (0, n), (nb_pixels, nb_pixels), format='csr')
+    Dx = sparse.diags_array([n_eye, eye], offsets=[0, n], shape=(nb_pixels, nb_pixels), format='dok')
     Dx[-n:,:] = 0
-    Dy = sparse.diags_array((n_eye, eye), (0, 1), (nb_pixels, nb_pixels), format='csr')
+    Dy = sparse.diags_array([n_eye, eye], offsets=[0, 1], shape=(nb_pixels, nb_pixels), format='dok')
     Dy[n-1:n:,:] = 0
 
+    Dx = Dx.tocsr()
+    Dy = Dy.tocsr()
     return Dx, Dy
-    
 
-def smoothness_matrixes(g, eps, alpha):
+
+def smoothness_matrixes(g, alpha, eps=0.0001):
     """ Smoothness matrixes for the WLS algorithm
     IN : g - image, eps - epsilon parameter, alpha - alpha parameter
     OUT : Ax, Ay - sparse matrices of the smoothness in x and y directions
@@ -37,5 +39,24 @@ def smoothness_matrixes(g, eps, alpha):
     lab_image = color.rgb2lab(g)
     log_luminance = exposure.adjust_log(lab_image[:, :, 0])
     
-    return log_luminance
+    # Compute matrix of derivatives of log-luminance
+    n, m = log_luminance.shape
+    Dx, Dy = gradient(n, m)
+    Lx = Dx.dot(log_luminance.flatten())
+    Ly = Dy.dot(log_luminance.flatten())
+    Lx = np.abs(Lx)
+    Ly = np.abs(Ly)
+
+    # Compute Ax and Ay matrices
+    Ax = np.power(Lx, alpha) + eps
+    Ay = np.power(Ly, alpha) + eps
+    Ax = 1 / Ax
+    Ay = 1 / Ay
+
+    return Ax, Ay
+
+
+
+
+    
 
