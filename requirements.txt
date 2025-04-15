@@ -2,4 +2,4 @@ numpy
 matplotlib
 scipy
 ipykernel
-skimage
+scikit-image
