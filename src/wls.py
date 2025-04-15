@@ -18,22 +18,19 @@ def gradient(n,m):
     OUT : Dx, Dy - sparse matrices of the gradient in x and y directions
     """
     nb_pixels = n * m
-    # Create the diagonals
+    
     e = np.ones(nb_pixels)
 
-    # Dx: horizontal differences
-    data_dx = np.vstack((-e, e))
-    offsets_dx = np.array([0, n])
-    Dx = sparse.dia_matrix((data_dx, offsets_dx), shape=(nb_pixels, nb_pixels)).tolil()
-    Dx[-n:, :] = 0  # Zero out the last n rows
-    Dx = Dx.tocsr()  # Convert to CSR for efficient use
+    # Create Dx
+    Dx = sparse.diags_array([-e, e], offsets=[0, n], shape=(nb_pixels, nb_pixels), format='lil')
+    Dx[-n:, :] = 0  # Zero last rows
+    Dx = Dx.tocsr()  # Convert to efficient CSR format
 
-    # Dy: vertical differences
-    data_dy = np.vstack((-e, e))
-    offsets_dy = np.array([0, 1])
-    Dy = sparse.dia_matrix((data_dy, offsets_dy), shape=(nb_pixels, nb_pixels)).tolil()
-    Dy[n-1::n, :] = 0  # Zero out every n-th row
-    Dy = Dy.tocsr()  # Convert to CSR for efficient use
+    # Create Dy
+    Dy = sparse.diags_array([-e, e], offsets=[0, 1], shape=(nb_pixels, nb_pixels), format='lil')
+    Dy[n-1::n, :] = 0  # Zero every nth row
+    Dy = Dy.tocsr()
+
     return Dx, Dy
 
 def smoothness_matrixes(g, alpha, eps=0.0001):
