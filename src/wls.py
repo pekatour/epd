@@ -3,7 +3,7 @@
 
 # Imports
 from scipy import sparse
-from skimage import io, color, exposure
+from skimage import color, exposure
 import numpy as np
 
 # Algorithm of edge-preserving smoothing
@@ -18,17 +18,23 @@ def gradient(n,m):
     OUT : Dx, Dy - sparse matrices of the gradient in x and y directions
     """
     nb_pixels = n * m
-    eye = [1] * nb_pixels
-    n_eye = [-1] * nb_pixels
-    Dx = sparse.diags_array([n_eye, eye], offsets=[0, n], shape=(nb_pixels, nb_pixels), format='dok')
-    Dx[-n:,:] = 0
-    Dy = sparse.diags_array([n_eye, eye], offsets=[0, 1], shape=(nb_pixels, nb_pixels), format='dok')
-    Dy[n-1:n:,:] = 0
+    # Create the diagonals
+    e = np.ones(nb_pixels)
 
-    Dx = Dx.tocsr()
-    Dy = Dy.tocsr()
+    # Dx: horizontal differences
+    data_dx = np.vstack((-e, e))
+    offsets_dx = np.array([0, n])
+    Dx = sparse.dia_matrix((data_dx, offsets_dx), shape=(nb_pixels, nb_pixels)).tolil()
+    Dx[-n:, :] = 0  # Zero out the last n rows
+    Dx = Dx.tocsr()  # Convert to CSR for efficient use
+
+    # Dy: vertical differences
+    data_dy = np.vstack((-e, e))
+    offsets_dy = np.array([0, 1])
+    Dy = sparse.dia_matrix((data_dy, offsets_dy), shape=(nb_pixels, nb_pixels)).tolil()
+    Dy[n-1::n, :] = 0  # Zero out every n-th row
+    Dy = Dy.tocsr()  # Convert to CSR for efficient use
     return Dx, Dy
-
 
 def smoothness_matrixes(g, alpha, eps=0.0001):
     """ Smoothness matrixes for the WLS algorithm
