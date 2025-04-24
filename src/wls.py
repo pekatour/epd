@@ -33,7 +33,7 @@ def gradient(n,m):
 
     return Dx, Dy
 
-def smoothness_matrixes(g, alpha, eps=0.0001):
+def smoothness_matrixes(g, Dx, Dy, alpha, eps):
     """ Smoothness matrixes for the WLS algorithm
     IN : g - image, eps - epsilon parameter, alpha - alpha parameter
     OUT : Ax, Ay - sparse matrices of the smoothness in x and y directions
@@ -43,8 +43,6 @@ def smoothness_matrixes(g, alpha, eps=0.0001):
     log_luminance = exposure.adjust_log(lab_image[:, :, 0])
     
     # Compute matrix of derivatives of log-luminance
-    n, m = log_luminance.shape
-    Dx, Dy = gradient(n, m)
     Lx = Dx.dot(log_luminance.flatten())
     Ly = Dy.dot(log_luminance.flatten())
     Lx = np.abs(Lx)
@@ -55,11 +53,31 @@ def smoothness_matrixes(g, alpha, eps=0.0001):
     Ay = np.power(Ly, alpha) + eps
     Ax = 1 / Ax
     Ay = 1 / Ay
+    n, m = g.shape[:2]
+    Ax = sparse.diags_array(Ax, offsets=0, shape=(n * m, n * m), format='csr')
+    Ay = sparse.diags_array(Ay, offsets=0, shape=(n * m, n * m), format='csr')
 
     return Ax, Ay
 
+def lagrangian(Ax, Ay, Dx, Dy):
+    """ Lagrangian of the WLS algorithm
+    IN : Ax, Ay, Dx, Dy
+    OUT : Lg - lagrangian matrix
+    """
+    return Dx.T.dot(Ax).dot(Dx) + Dy.T.dot(Ay).dot(Dy)
 
-
-
+def iteration(g, lambda_, alpha, eps=0.0001):
+    """ Iteration of the WLS algorithm
+    IN : g - image, lambda - lambda parameter, alpha - alpha parameter, eps - epsilon parameter
+    OUT : smoothed image
+    """
+    n, m = g.shape[:2]
+    Dx, Dy = gradient(n, m)
+    Ax, Ay = smoothness_matrixes(g, Dx, Dy, alpha, eps)
+    Lg = lagrangian(Ax, Ay, Dx, Dy)
+    Lg = Lg.tocsr()
     
+    I = sparse.eye(n * m, format='csr')
+    A = I + lambda_ * Lg
 
+    return sparse.linalg.spsolve(A, g[:,:,0].flatten())
