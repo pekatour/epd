@@ -18,18 +18,16 @@ def gradient(n,m):
     OUT : Dx, Dy - sparse matrices of the gradient in x and y directions
     """
     nb_pixels = n * m
-    
-    e = np.ones(nb_pixels)
 
     # Create Dx
-    Dx = sparse.diags_array([-e, e], offsets=[0, n], shape=(nb_pixels, nb_pixels), format='lil')
-    Dx[-n:, :] = 0  # Zero last rows
-    Dx = Dx.tocsr()  # Convert to efficient CSR format
+    ex = np.ones(nb_pixels)
+    ex[-n:] = 0
+    Dx = sparse.diags_array([-ex, ex], offsets=[0, n], shape=(nb_pixels, nb_pixels), format='csr')
 
     # Create Dy
-    Dy = sparse.diags_array([-e, e], offsets=[0, 1], shape=(nb_pixels, nb_pixels), format='lil')
-    Dy[n-1::n, :] = 0  # Zero every nth row
-    Dy = Dy.tocsr()
+    ey = np.ones(nb_pixels)
+    ey[n-1::n] = 0
+    Dy = sparse.diags_array([-ey, ey], offsets=[0, 1], shape=(nb_pixels, nb_pixels), format='csr')
 
     return Dx, Dy
 
