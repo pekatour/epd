@@ -14,7 +14,7 @@ import numpy as np
 def gradient(n,m):
     """ Gradient of the image
     IN : n - number of rows in the image
-    m - number of column in the image
+        m - number of column in the image
     OUT : Dx, Dy - sparse matrices of the gradient in x and y directions
     """
     nb_pixels = n * m
@@ -33,7 +33,11 @@ def gradient(n,m):
 
 def smoothness_matrixes(g, Dx, Dy, alpha, eps):
     """ Smoothness matrixes for the WLS algorithm
-    IN : g - image, eps - epsilon parameter, alpha - alpha parameter
+    IN : g - image, 
+        Dx - sparse matrix of the gradient in x direction,
+        Dy - sparse matrix of the gradient in y direction,
+        eps - epsilon parameter,
+        alpha - alpha parameter
     OUT : Ax, Ay - sparse matrices of the smoothness in x and y directions
     """
     # Compute log-luminance channel of the input image g
@@ -64,13 +68,17 @@ def lagrangian(Ax, Ay, Dx, Dy):
     """
     return Dx.T.dot(Ax).dot(Dx) + Dy.T.dot(Ay).dot(Dy)
 
-def iteration(g, lambda_, alpha, eps=0.0001):
+def iteration(g, Dx, Dy, lambda_, alpha, eps=0.0001):
     """ Iteration of the WLS algorithm
-    IN : g - image, lambda - lambda parameter, alpha - alpha parameter, eps - epsilon parameter
+    IN : g - image,
+        Dx - sparse matrix of the gradient in x direction,
+        Dy - sparse matrix of the gradient in y direction,
+        lambda - lambda parameter, 
+        alpha - alpha parameter, 
+        eps - epsilon parameter
     OUT : smoothed image
     """
     n, m = g.shape[:2]
-    Dx, Dy = gradient(n, m)
     Ax, Ay = smoothness_matrixes(g, Dx, Dy, alpha, eps)
     Lg = lagrangian(Ax, Ay, Dx, Dy)
     Lg = Lg.tocsr()
@@ -78,4 +86,14 @@ def iteration(g, lambda_, alpha, eps=0.0001):
     I = sparse.eye(n * m, format='csr')
     A = I + lambda_ * Lg
 
-    return sparse.linalg.spsolve(A, g[:,:,0].flatten())
+    if len(g.shape) == 3:
+        # If the image is RGB, we need to solve for each channel separately
+        result = np.zeros((n * m, 3))
+        for i in range(3):
+            result[:, i] = sparse.linalg.spsolve(A, g[:,:, i].flatten())
+        return result.reshape(n, m, 3)
+    elif len(g.shape) == 2:
+        # If the image is grayscale, we can solve directly
+        return sparse.linalg.spsolve(A, g.flatten())
+    else:
+        raise ValueError("Input image must be either grayscale or RGB.")
