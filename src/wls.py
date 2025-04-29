@@ -22,7 +22,7 @@ def gradient(n,m):
     # Create Dx
     ex = np.ones(nb_pixels)
     ex[-n:] = 0
-    Dx = sparse.diags_array([-ex, ex], offsets=[0, n], shape=(nb_pixels, nb_pixels), format='csr')
+    Dx = sparse.diags_array([-ex, ex], offsets=[0, m], shape=(nb_pixels, nb_pixels), format='csr')
 
     # Create Dy
     ey = np.ones(nb_pixels)
