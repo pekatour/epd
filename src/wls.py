@@ -6,11 +6,6 @@ from scipy import sparse
 from skimage import color, exposure
 import numpy as np
 
-# Algorithm of edge-preserving smoothing
-# IN : input image, lambda, eps, nb_layers, alpha
-# OUT : array of nb_layers images, each image is a smoothed version of the input image
-
-
 def gradient(n,m):
     """ Gradient of the image
     IN : n - number of rows in the image
@@ -97,3 +92,27 @@ def iteration(g, Dx, Dy, lambda_, alpha, eps=0.0001):
         return sparse.linalg.spsolve(A, g.flatten())
     else:
         raise ValueError("Input image must be either grayscale or RGB.")
+
+def wsl(input_image, alpha, lambda_, c = 2, eps = 0.0001, nb_layers = 3, is_iterative = True)
+    """ Edge-preserving decomposition using WSL algorithm
+    IN : input_image - image to be smoothed,
+        lambda_ - lambda parameter,
+        eps - epsilon parameter,
+        nb_layers - number of layers,
+        alpha - alpha parameter,
+        is_iterative - boolean indicating whether to use iterative or direct algorithm
+    OUT : array of nb_layers + 1 images, the initial image and each other image is a smoothed version of the input image
+    """
+    # Compute gradient
+    Dx, Dy = gradient(input_image.shape[0], input_image.shape[1])
+    
+    if is_iterative:
+        nb = -1
+    else:
+        nb = 0
+
+    result = [input_image]
+    for i in range(nb_layers):
+        result.append(iteration(result[nb], Dx, Dy, c**i * lambda_, alpha, eps))
+
+    return result
