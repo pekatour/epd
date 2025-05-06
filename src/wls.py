@@ -5,6 +5,7 @@
 from scipy import sparse
 from skimage import color, exposure
 import numpy as np
+import matplotlib.pyplot as plt
 
 def gradient(n,m):
     """ Gradient of the image
@@ -93,14 +94,15 @@ def iteration(g, Dx, Dy, lambda_, alpha, eps=0.0001):
     else:
         raise ValueError("Input image must be either grayscale or RGB.")
 
-def wsl(input_image, alpha, lambda_, c = 2, eps = 0.0001, nb_layers = 3, is_iterative = True)
-    """ Edge-preserving decomposition using WSL algorithm
+def wls(input_image, lambda_, alpha, c = 2, eps = 0.0001, nb_layers = 3, is_iterative = True, verbose = False):
+    """ Edge-preserving decomposition using WLS algorithm
     IN : input_image - image to be smoothed,
         lambda_ - lambda parameter,
         eps - epsilon parameter,
         nb_layers - number of layers,
         alpha - alpha parameter,
         is_iterative - boolean indicating whether to use iterative or direct algorithm
+        verbose - boolean indicating whether to print information about the layers
     OUT : array of nb_layers + 1 images, the initial image and each other image is a smoothed version of the input image
     """
     # Compute gradient
@@ -113,6 +115,26 @@ def wsl(input_image, alpha, lambda_, c = 2, eps = 0.0001, nb_layers = 3, is_iter
 
     result = [input_image]
     for i in range(nb_layers):
+        if verbose:
+            print(f"Layer {i + 1} / {nb_layers}")
+
         result.append(iteration(result[nb], Dx, Dy, c**i * lambda_, alpha, eps))
 
+        if verbose:
+            plt.imshow(result[-1].astype(np.uint8))
+            plt.show()
+
     return result
+
+
+def create_detail_layers(img_lst):
+    """
+    Create detail layers from a list of images.
+    IN : img_lst - list of images
+    OUT : detail_layers - list of detail layers
+    """
+    detail_layers = []
+    for i in range(len(img_lst) - 1):
+        detail_layer = img_lst[i] - img_lst[i + 1]
+        detail_layers.append(detail_layer)
+    return detail_layers

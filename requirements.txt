@@ -3,3 +3,4 @@ matplotlib
 scipy
 ipykernel
 scikit-image
+ipywidgets
