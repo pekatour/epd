@@ -37,8 +37,11 @@ def smoothness_matrixes(g, Dx, Dy, alpha, eps):
     OUT : Ax, Ay - sparse matrices of the smoothness in x and y directions
     """
     # Compute log-luminance channel of the input image g
-    lab_image = color.rgb2lab(g)
-    log_luminance = exposure.adjust_log(lab_image[:, :, 0])
+    if len(g.shape) == 3:
+        lab_image = color.rgb2lab(g)
+        log_luminance = exposure.adjust_log(lab_image[:, :, 0])
+    else:
+        log_luminance = exposure.adjust_log(g)
     
     # Compute matrix of derivatives of log-luminance
     Lx = Dx.dot(log_luminance.flatten())
@@ -90,7 +93,7 @@ def iteration(g, Dx, Dy, lambda_, alpha, eps=0.0001):
         return result.reshape(n, m, 3)
     elif len(g.shape) == 2:
         # If the image is grayscale, we can solve directly
-        return sparse.linalg.spsolve(A, g.flatten())
+        return sparse.linalg.spsolve(A, g.flatten()).reshape(n, m)
     else:
         raise ValueError("Input image must be either grayscale or RGB.")
 
@@ -121,7 +124,10 @@ def wls(input_image, lambda_, alpha, c = 2, eps = 0.0001, nb_layers = 3, is_iter
         result.append(iteration(result[nb], Dx, Dy, c**i * lambda_, alpha, eps))
 
         if verbose:
-            plt.imshow(result[-1].astype(np.uint8))
+            if len(result[-1].shape) == 3:
+                plt.imshow(result[-1].astype(np.uint8))
+            else:
+                plt.imshow(result[-1].astype(np.uint8), cmap='gray')
             plt.show()
 
     return result

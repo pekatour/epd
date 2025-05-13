@@ -16,12 +16,14 @@ def load_image(file_path, gray=False, verbose=False):
     OUT : image (ndarray) - Loaded image as a numpy array
     """
     image = io.imread(file_path, as_gray=gray)
+    if gray:
+        image = image*255  # Convert to uint8 if grayscale
     if verbose:
         print(type(image))
         print("Image shape:", image.shape)
         print("Data type:", image.dtype)
 
-        plt.imshow(image)
+        plt.imshow(image, cmap='gray' if gray else None)
         plt.show()
     return image
 
