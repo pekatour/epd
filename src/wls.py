@@ -101,6 +101,7 @@ def wls(input_image, lambda_, alpha, c = 2, eps = 0.0001, nb_layers = 3, is_iter
     """ Edge-preserving decomposition using WLS algorithm
     IN : input_image - image to be smoothed,
         lambda_ - lambda parameter,
+        c - constant parameter used for lambda,
         eps - epsilon parameter,
         nb_layers - number of layers,
         alpha - alpha parameter,

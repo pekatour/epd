@@ -13,6 +13,9 @@ def load_image(file_path, gray=False, verbose=False):
     OUT : image (ndarray) - Loaded image as a numpy array
     """
     image = io.imread(file_path, as_gray=gray)
+    if len(image.shape) == 3 and image.shape[2] == 4:
+        # Remove alpha channel if present
+        image = image[:, :, :3]
     if gray:
         image = image*255
     if verbose:
